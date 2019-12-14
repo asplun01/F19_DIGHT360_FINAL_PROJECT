@@ -12,6 +12,7 @@ with open(r"CollegeMajors.html", "w+") as f:
 
 links = []
 majors = []
+# makes a list of all majors and the links to those majors 
 with open('CollegeMajors.html') as f:
     soup = BeautifulSoup(f.read(), "html5lib")
     for item in soup.find_all("a"):
@@ -20,7 +21,9 @@ with open('CollegeMajors.html') as f:
             majors.extend(major)
             link = item.get('href')
             links.append(link)
-            
+
+# Writes two files to hold the majors and links, and the last
+# one to make a file for each major containing each course in the major
 i = 0
 with open('BYUMajors.txt', 'w+') as f:
     while i < len(majors):
