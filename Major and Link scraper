@@ -1,0 +1,58 @@
+from bs4 import BeautifulSoup
+import requests as r
+import re
+import time
+import random
+
+url = "https://catalog.byu.edu/majors"
+h = {'user-agent': 'Emily Asplund(asplund.emily@gmail.com)'}
+page = r.get(url, headers=h)
+with open(r"CollegeMajors.html", "w+") as f:
+    f.write(page.text)
+
+links = []
+majors = []
+with open('CollegeMajors.html') as f:
+    soup = BeautifulSoup(f.read(), "html5lib")
+    for item in soup.find_all("a"):
+        major = re.findall(r'rel=".*>(.*\))', str(item))
+        if re.findall(r'rel=".*>(.*)\(', str(item)):
+            majors.extend(major)
+            link = item.get('href')
+            links.append(link)
+            
+i = 0
+with open('BYUMajors.txt', 'w+') as f:
+    while i < len(majors):
+        major = majors[i]
+        newMajor = major.replace(": ", "-")
+        newMajor = newMajor.replace("/", "-")
+        print(newMajor, file=f)
+        i += 1
+
+i = 0
+with open('BYULinks.txt', 'w+') as f:
+    while i < len(links):
+        print(links[i], file=f)
+        i += 1
+
+i = 0
+while i < len(links):
+    print(links[i])
+    url = "https://catalog.byu.edu/" + links[i]
+    majorPage = r.get(url, headers=h)
+    major = majors[i]
+    newMajor = major.replace(": ", "-")
+    newMajor = newMajor.replace("/", "-")
+    print(newMajor)
+    newFileName = newMajor + "courseList.txt"
+    with open(newFileName, "w+") as f:
+        classes = []
+        soup = BeautifulSoup(majorPage.text, "html5lib")
+        for object in soup.find_all("div", class_="pr-link"):
+            tag = object.find('a')
+            classLink = tag.get("href")
+            classes.append(classLink)
+        for link in classes:
+            print(link, file=f)
+    i += 1
