@@ -7,6 +7,7 @@ import random
 majors = []
 links = []
 
+# creates the majors and links lists again to be used later
 with open('BYUMajors.txt') as f:
     for line in f:
         majors.append(line.rstrip())
@@ -15,6 +16,7 @@ with open('BYULinks.txt') as f:
     for line in f:
         links.append(line.rstrip())
 
+# Makes a file for each major that contains all the text for every major required course
 i = 0
 h = {'user-agent': 'Emily Asplund(asplund.emily@gmail.com)'}
 while i < len(majors):
