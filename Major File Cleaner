@@ -2,10 +2,11 @@ import nltk
 from nltk.stem import WordNetLemmatizer
 from nltk.corpus import stopwords
 stop_words = set(stopwords.words('english'))
+lemmatizer = WordNetLemmatizer()
 
 
 def get_wordnet_pos(treebank_tag):
-'''Replace the tag with a command the lemmatizer can understand'''
+'''Replaces the pos_tag with a command the lemmatizer can understand'''
     if treebank_tag.startswith('J'):
         return 'a'
     elif treebank_tag.startswith('V'):
@@ -18,12 +19,12 @@ def get_wordnet_pos(treebank_tag):
         return 'n'
 
 
-lemmatizer = WordNetLemmatizer()
 majors = []
 with open('BYUMajors.txt') as f:
     for line in f:
         majors.append(line.rstrip())
 
+#cleans each major file by making all words lowercase, removing stopwords, and getting the root for each word
 for major in majors:
     words = []
     taggedWords = []
