@@ -1,0 +1,43 @@
+from bs4 import BeautifulSoup
+import requests as r
+import re
+import time
+import random
+
+majors = []
+links = []
+
+with open('BYUMajors.txt') as f:
+    for line in f:
+        majors.append(line.rstrip())
+
+with open('BYULinks.txt') as f:
+    for line in f:
+        links.append(line.rstrip())
+
+i = 0
+h = {'user-agent': 'Emily Asplund(asplund.emily@gmail.com)'}
+while i < len(majors):
+    classList = []
+    url = "https://catalog.byu.edu" + str(links[i])
+    print(majors[i])
+    page = r.get(url, headers=h)
+    soup = BeautifulSoup(page.text, "html5lib")
+    for object in soup.find_all("div", class_="pr-link"):
+        tag = object.find('a')
+        classLink = tag.get("href")
+        classList.append(classLink)
+    newFile = majors[i] + ".html"
+    with open(newFile, "w+") as file:
+        for link in classList:
+            print(link)
+            url = "https://catalog.byu.edu" + str(link)
+            page = r.get(url, headers=h)
+            soup = BeautifulSoup(page.text, "html5lib")
+            for info in soup.find_all("div", class_="field-item even"):
+                try:
+                    print(info.get_text(' '), file=file)
+                    time.sleep(random.uniform(.25, .75))
+                except:
+                    continue
+    i += 1
