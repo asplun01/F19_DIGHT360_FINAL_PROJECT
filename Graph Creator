@@ -1,0 +1,134 @@
+import spacy
+import requests as r
+import nltk
+from nltk.stem import WordNetLemmatizer
+from nltk.corpus import stopwords
+from bs4 import BeautifulSoup
+import matplotlib.pyplot as plt
+import re
+import time
+import random
+nlp = spacy.load("en_core_web_md")
+lemmatizer = WordNetLemmatizer()
+stop_words = set(stopwords.words('english'))
+
+
+def get_wordnet_pos(treebank_tag):
+
+    if treebank_tag.startswith('J'):
+        return 'a'
+    elif treebank_tag.startswith('V'):
+        return 'v'
+    elif treebank_tag.startswith('N'):
+        return 'n'
+    elif treebank_tag.startswith('R'):
+        return 'r'
+    else:
+        return 'n'
+
+
+majorFiles = []
+newMajors = []
+mostSimilar = {}
+
+with open('BYUMajors.txt') as f:
+    for line in f:
+        majorFile = line.rstrip() + ".html"
+        majorFiles.append(majorFile)
+
+# desiredMajor can be changed to any major at BYU
+desiredMajor = "Art (BA).html"
+for item in re.findall(r'(.*).html', desiredMajor):
+    desiredMajorName = item
+print(desiredMajorName)
+
+# compares similarity between desired major and the other majors at BYU
+with open(desiredMajor) as f:
+    baseFile = nlp(f.read())
+    for major in majorFiles:
+        with open(major) as comparison:
+            comparer = nlp(comparison.read())
+            similarityNumber = baseFile.similarity(comparer)
+            if similarityNumber == 1:
+                continue
+            print(similarityNumber)
+            mostSimilar.update({major: similarityNumber})
+
+mostSimilar = {maj: value for maj, value in sorted(mostSimilar.items(), key=lambda item: item[1], reverse=True)}
+print (mostSimilar)
+
+with open("Art (BA) most relevant.txt", "w+") as f:
+    for maj, value in mostSimilar.items():
+        print(maj, value, sep="\t", file=f)
+
+# upcoming graph shows the 15 most similar majors
+majors = [maj for maj, value in mostSimilar.items()]
+for major in majors:
+    newMajor = re.findall(r'(.*).html', major)
+    print(newMajor)
+    newMajors.extend(newMajor)
+values = [value for maj, value in mostSimilar.items()]
+
+plt.xticks(fontsize=6, rotation=90)
+plt.scatter(newMajors[:15], values[:15])
+plt.tight_layout()
+fig = plt.gcf()
+figureFile = desiredMajorName + " graph.png"
+fig.savefig(figureFile)
+plt.show()
+
+# following code scrapes the info of classes from majors most similar
+# to the desired major
+courseFile = desiredMajorName + "courseList.txt"
+completedCourses = []
+similarities = {}
+with open(courseFile) as f:
+    for line in f:
+        completedCourses.append(line.rstrip())
+    for major in majors[:10]:
+        for match in re.findall(r'(.*).html', major):
+            file = match + "courseList.txt"
+            print(file)
+        with open(file) as file:
+            for line in file:
+                line = line.rstrip()
+                if line not in completedCourses:
+                    h = {'user-agent': 'Emily Asplund(asplund.emily@gmail.com)'}
+                    page = r.get("https://catalog.byu.edu" + line, headers=h)
+                    soup = BeautifulSoup(page.text, "html5lib")
+                    for info in soup.find_all("div", class_="field-item even"):
+                        newInfo = info.get_text(' ')
+                        text = []
+                        taggedWords = []
+                        text.extend(nltk.word_tokenize(newInfo))
+                        lowerCase = [str(word).lower() for word in text]
+                        noStopWords = [word for word in lowerCase if word not in stop_words]
+                        taggedWords.extend(nltk.pos_tag(noStopWords))
+                        lemmatized = [lemmatizer.lemmatize(word, get_wordnet_pos(tag)) for word, tag in taggedWords]
+                        finalInfo = nlp(' '.join(lemmatized))
+                        time.sleep(random.uniform(.25, .75))
+                        similarityNumber = baseFile.similarity(finalInfo)
+                        print(similarityNumber)
+                        similarities.update({line: similarityNumber})
+                        completedCourses.append(line)
+
+    similarities = {maj: value for maj, value in sorted(similarities.items(), key=lambda item: item[1], reverse=True)}
+    print(similarities)
+
+    courses = [course for course, value in similarities.items()]
+    newCourses = []
+for course in courses:
+    course = course.replace('-', ' ')
+    newCourse = re.findall(r'/.*/.*/(.*)', course)
+    print(newCourse)
+    newCourses.extend(newCourse)
+    print(newCourses)
+values = [value for course, value in similarities.items()]
+
+plt.xticks(fontsize=8, rotation=90)
+plt.scatter(newCourses[:15], values[:15])
+plt.tight_layout()
+fig = plt.gcf()
+figureFile = desiredMajorName + "course graph.png"
+fig.savefig(figureFile)
+plt.show()
